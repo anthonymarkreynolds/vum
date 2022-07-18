@@ -5,6 +5,9 @@ This is recreational project where I'm building a vim clone in javascript. The a
 ## Live site
 [https://anthonymarkreynolds.github.io/vum/](https://anthonymarkreynolds.github.io/vum/)
 
+## keybind
+mostly normal except escape is backslash
+
 ## Currently working
 - resize display
 - status line
