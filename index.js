@@ -19,6 +19,19 @@ const cursor = {
   char: '_',
 };
 
+const buffer = {
+  text: 'test\ntest2\ntest3',
+};
+
+const drawBuffer = () => {
+  buffer.text.split('\n').forEach((line, i) => {
+    console.log(line, i);
+    windowProps.text = windowProps.text.slice(0, i * (windowProps.width + 1))
+      + line
+      + windowProps.text.slice(i * (windowProps.width + 1) + line.length, -1);
+  });
+};
+
 const statusLine = {};
 const drawStatusLine = () => {
   const lineStart = (windowProps.width + 1) * (windowProps.height - 2);
@@ -29,15 +42,15 @@ const drawStatusLine = () => {
     + Array.from(
       { length: windowProps.width - (windowProps.mode.length + cursorInfo.length) },
       () => '-',
-    ).join('').trim()
+    ).join('')
     + cursorInfo
-    + windowProps.text.slice(lineEnd,-1);
+    + windowProps.text.slice(lineEnd, -1);
 };
 
 const drawBlank = () => {
   const line = Array.from(
     { length: windowProps.width },
-    () => '╳',
+    () => '·',
   ).join('');
   windowProps.text = Array.from(
     { length: windowProps.height },
@@ -54,23 +67,21 @@ const drawCursor = () => {
 const handleRedraw = () => {
   const height = Math.trunc(document.body.clientHeight / 25);
   const width = Math.trunc(document.body.clientWidth / 12.03);
-  if ((width !== windowProps.width) || (height !== windowProps.height)) {
+  if ( (width !== windowProps.width)
+    || (height !== windowProps.height)
+    || windowProps.pendingChange) {
     console.log({ windowProps });
     windowProps.width = width;
     windowProps.height = height;
     windowProps.redrawcount += 1;
     drawBlank();
+    drawBuffer();
     drawCursor();
     drawStatusLine();
-    document.body.innerText = windowProps.text
-      .slice(0, -lastPressed.label.length - 2) + lastPressed.label + lastPressed.key;
+    document.querySelector('#view').innerText = windowProps.text
+      .slice(0, -lastPressed.label.length + 1) + lastPressed.label + lastPressed.key;
   }
   if (windowProps.pendingChange) {
-    drawBlank();
-    drawCursor();
-    drawStatusLine();
-    document.body.innerText = windowProps.text
-      .slice(0, -lastPressed.label.length - 2) + lastPressed.label + lastPressed.key;
     windowProps.pendingChange = false;
   }
 };
@@ -84,6 +95,9 @@ const handleKeypress = ({ key, keyCode }) => {
       switch (key) {
         case ':':
           windowProps.mode = 'command';
+          break;
+        case 'i':
+          windowProps.mode = 'insert';
           break;
         case 'j':
           cursor.row += 1;
@@ -107,8 +121,18 @@ const handleKeypress = ({ key, keyCode }) => {
       keyAction();
     }
   } else if (windowProps.mode === 'command') {
-    if (key === 'Escape') {
+    if (key === '\\') {
       windowProps.mode = 'normal';
+    }
+  } else if (windowProps.mode === 'insert') {
+    const curLocal = cursor.row * (windowProps.width + 1) + cursor.col;
+    if (key === 'Enter') {key = '\n'; }
+    switch (key) {
+      case '\\':
+        windowProps.mode = 'normal';
+        break;
+      default:
+        buffer.text = buffer.text.slice(0, curLocal) + key + buffer.text.slice(curLocal, -1);
     }
   }
   handleRedraw();
