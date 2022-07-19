@@ -1,5 +1,5 @@
 # Vum
-## Vim Unimproved
+## Vi Unimproved
 This is recreational project where I'm building a vim clone in javascript. The aim of this project is to use a single dom elements text node as the entire user interface.
 
 ## Live site
