@@ -9,18 +9,26 @@ var windowProps = {
     textCanvas: '',
     pendingRedraw: true
 };
-var sliceAt = function (textCanvas, text, pos) {
+var buffer = 'test\ntest2\ntest3\ntest4';
+var sliceAt = function (text, pos) {
     var i = (windowProps.width + 1) * pos.y + pos.x;
-    return textCanvas.slice(0, i) + text + textCanvas.slice(i + text.length, -1);
+    windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length);
 };
-// const draw = (textObject:string, textCanvas:TextCanvas, location:CoOrd): TextCanvas => ;
+var drawBuffer = function () {
+    buffer.split('\n').forEach(function (line, i) { sliceAt(line, { x: 0, y: i }); });
+};
+var drawCursor = function () {
+    sliceAt(cursor.char, cursor.pos);
+};
 var drawBlank = function () {
-    return ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height);
+    windowProps.textCanvas = ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height);
 };
 var drawCanvas = function () {
-    windowProps.textCanvas = drawBlank();
+    drawBlank();
+    drawBuffer();
+    drawCursor();
     var view = document.querySelector('#view');
-    view.innerText = sliceAt(windowProps.textCanvas, cursor.char, cursor.pos);
+    view.innerText = windowProps.textCanvas;
     console.log(windowProps);
 };
 var handleResize = function () {
@@ -40,13 +48,11 @@ var runAction = function (action, updateUi) {
     console.log(updateUi);
 };
 var nKeyActions = {
-    j: function () { cursor.pos.y = (cursor.pos.y + 1) % windowProps.height; },
-    k: function () { cursor.pos.y = (cursor.pos.y - 1 + windowProps.height) % windowProps.height; },
+    j: function () { cursor.pos.y = (cursor.pos.y + 1) % (windowProps.height - 2); },
+    k: function () { cursor.pos.y = (cursor.pos.y - 1 + (windowProps.height - 2)) % (windowProps.height - 2); },
     l: function () { cursor.pos.x = (cursor.pos.x + 1) % (windowProps.width); },
-    h: function () { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width); }
-};
-var handleNormalKey = function (key) {
-    runAction(nKeyActions[key], true);
+    h: function () { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width); },
+    i: function () { windowProps.mode = 'insert'; }
 };
 var handleKeypress = function (event) {
     if (event.key === 'Escape') {
@@ -56,7 +62,7 @@ var handleKeypress = function (event) {
         switch (windowProps.mode) {
             case 'normal':
                 console.log(event.key);
-                handleNormalKey(event.key);
+                Object.keys(nKeyActions).includes(event.key) && runAction(nKeyActions[event.key], true);
                 console.log(cursor.pos);
                 break;
             case 'insert':

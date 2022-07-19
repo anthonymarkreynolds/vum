@@ -1,6 +1,5 @@
 type Mode = 'normal' | 'insert' | 'select' | 'command'
 type TextCanvas = string
-type Point = number
 
 interface WindowProps {
   mode: Mode
@@ -11,8 +10,8 @@ interface WindowProps {
 }
 
 interface Coord {
-  x: Point,
-  y: Point
+  x: number,
+  y: number
 }
 
 interface Cursor {
@@ -33,19 +32,28 @@ const windowProps: WindowProps = {
   pendingRedraw: true
 }
 
-const sliceAt = (textCanvas:TextCanvas, text:string, pos:Coord): TextCanvas => {
+let buffer:string = 'test\ntest2\ntest3\ntest4'
+
+const sliceAt = (text:string, pos:Coord):void => {
   const i = (windowProps.width + 1) * pos.y + pos.x
-  return textCanvas.slice(0, i) + text + textCanvas.slice(i + text.length, -1)
+  windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length)
+}
+const drawBuffer = ():void => {
+  buffer.split('\n').forEach((line, i) => { sliceAt(line, { x: 0, y: i }) })
+}
+const drawCursor = ():void => {
+  sliceAt(cursor.char, cursor.pos)
 }
 
-// const draw = (textObject:string, textCanvas:TextCanvas, location:CoOrd): TextCanvas => ;
-const drawBlank = ():string => {
-  return ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height)
+const drawBlank = ():void => {
+  windowProps.textCanvas = ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height)
 }
 const drawCanvas = (): void => {
-  windowProps.textCanvas = drawBlank()
+  drawBlank()
+  drawBuffer()
+  drawCursor()
   const view = document.querySelector('#view') as HTMLElement
-  view.innerText = sliceAt(windowProps.textCanvas, cursor.char, cursor.pos)
+  view.innerText = windowProps.textCanvas
   console.log(windowProps)
 }
 
@@ -71,14 +79,11 @@ interface KeyActions {
 }
 
 const nKeyActions: KeyActions = {
-  j: () => { cursor.pos.y = (cursor.pos.y + 1) % windowProps.height },
-  k: () => { cursor.pos.y = (cursor.pos.y - 1 + windowProps.height) % windowProps.height },
+  j: () => { cursor.pos.y = (cursor.pos.y + 1) % (windowProps.height - 2) },
+  k: () => { cursor.pos.y = (cursor.pos.y - 1 + (windowProps.height - 2)) % (windowProps.height - 2) },
   l: () => { cursor.pos.x = (cursor.pos.x + 1) % (windowProps.width) },
-  h: () => { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width) }
-}
-
-const handleNormalKey = (key:string): void => {
-  runAction(nKeyActions[key], true)
+  h: () => { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width) },
+  i: () => { windowProps.mode = 'insert' }
 }
 
 const handleKeypress = (event: KeyboardEvent): void => {
@@ -88,7 +93,7 @@ const handleKeypress = (event: KeyboardEvent): void => {
     switch (windowProps.mode) {
       case 'normal':
         console.log(event.key)
-        handleNormalKey(event.key)
+        Object.keys(nKeyActions).includes(event.key) && runAction(nKeyActions[event.key], true)
         console.log(cursor.pos)
         break
       case 'insert':
