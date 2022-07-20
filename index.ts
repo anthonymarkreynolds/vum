@@ -7,6 +7,7 @@ interface WindowProps {
   height: number
   textCanvas: TextCanvas
   pendingRedraw: boolean
+  multiplier: string
 }
 
 interface Coord {
@@ -24,7 +25,7 @@ type LineArray = Array<Line>
 
 interface Buffer {
   name: string,
-  text: LineArray[]
+  text: LineArray
 }
 
 const cursor: Cursor = {
@@ -37,13 +38,14 @@ const windowProps: WindowProps = {
   width: 0,
   height: 0,
   textCanvas: '',
-  pendingRedraw: true
+  pendingRedraw: true,
+  multiplier: '1'
 }
 
-// let buffer:Buffer = {
-//   name: 'teset',
-//   text: 'test\ntest2\ntest3\ntest4'.split('\n')
-// }
+let buffer:Buffer = {
+  name: 'teset',
+  text: 'test\ntest2\ntest3\ntest4'.split('\n').map(line => line.split(''))
+}
 
 // const sliceAt = (text:string, pos:Coord):void => {
 //   const i = (windowProps.width + 1) * pos.y + pos.x
@@ -60,7 +62,6 @@ const drawCursor = (lineArray:LineArray):LineArray => {
   console.log(lineArray)
   return lineArray
 }
-
 
 const renderLineArray = (lineArray:LineArray): void => {
   const view = document.querySelector('#view') as HTMLElement
@@ -93,16 +94,26 @@ const runAction = (action:Function|undefined, updateUi:boolean): void => {
   console.log(updateUi)
 }
 
+const useMultiplier = ():number => {
+  const mult = 1 * Number(windowProps.multiplier || 1)
+  windowProps.multiplier = ''
+  return mult
+}
+
 interface KeyActions {
   [key: string]: Function | undefined
 }
 
 const nKeyActions: KeyActions = {
-  j: () => { cursor.pos.y = (cursor.pos.y + 1) % (windowProps.height - 2) },
-  k: () => { cursor.pos.y = (cursor.pos.y - 1 + (windowProps.height - 2)) % (windowProps.height - 2) },
-  l: () => { cursor.pos.x = (cursor.pos.x + 1) % (windowProps.width) },
-  h: () => { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width) },
-  i: () => { windowProps.mode = 'insert' }
+  j: () => { cursor.pos.y = (cursor.pos.y + useMultiplier()) % (windowProps.height - 2) },
+  k: () => { cursor.pos.y = (cursor.pos.y - useMultiplier() + (windowProps.height - 2)) % (windowProps.height - 2) },
+  l: () => { cursor.pos.x = (cursor.pos.x + useMultiplier()) % (windowProps.width) },
+  h: () => { cursor.pos.x = (cursor.pos.x - useMultiplier() + windowProps.width) % (windowProps.width) },
+  i: () => { windowProps.mode = 'insert' }//,
+}
+
+for (let i = 0; i < 10; i++) {
+  nKeyActions[i] = () => { windowProps.multiplier += i.toString() }
 }
 
 const handleKeypress = (event: KeyboardEvent): void => {

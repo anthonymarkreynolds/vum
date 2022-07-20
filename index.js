@@ -7,12 +7,13 @@ var windowProps = {
     width: 0,
     height: 0,
     textCanvas: '',
-    pendingRedraw: true
+    pendingRedraw: true,
+    multiplier: '1'
 };
-// let buffer:Buffer = {
-//   name: 'teset',
-//   text: 'test\ntest2\ntest3\ntest4'.split('\n')
-// }
+var buffer = {
+    name: 'teset',
+    text: 'test\ntest2\ntest3\ntest4'.split('\n').map(function (line) { return line.split(''); })
+};
 // const sliceAt = (text:string, pos:Coord):void => {
 //   const i = (windowProps.width + 1) * pos.y + pos.x
 //   windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length)
@@ -56,13 +57,24 @@ var runAction = function (action, updateUi) {
         drawCanvas();
     console.log(updateUi);
 };
-var nKeyActions = {
-    j: function () { cursor.pos.y = (cursor.pos.y + 1) % (windowProps.height - 2); },
-    k: function () { cursor.pos.y = (cursor.pos.y - 1 + (windowProps.height - 2)) % (windowProps.height - 2); },
-    l: function () { cursor.pos.x = (cursor.pos.x + 1) % (windowProps.width); },
-    h: function () { cursor.pos.x = (cursor.pos.x - 1 + windowProps.width) % (windowProps.width); },
-    i: function () { windowProps.mode = 'insert'; }
+var useMultiplier = function () {
+    var mult = 1 * Number(windowProps.multiplier || 1);
+    windowProps.multiplier = '';
+    return mult;
 };
+var nKeyActions = {
+    j: function () { cursor.pos.y = (cursor.pos.y + useMultiplier()) % (windowProps.height - 2); },
+    k: function () { cursor.pos.y = (cursor.pos.y - useMultiplier() + (windowProps.height - 2)) % (windowProps.height - 2); },
+    l: function () { cursor.pos.x = (cursor.pos.x + useMultiplier()) % (windowProps.width); },
+    h: function () { cursor.pos.x = (cursor.pos.x - useMultiplier() + windowProps.width) % (windowProps.width); },
+    i: function () { windowProps.mode = 'insert'; } //,
+};
+var _loop_1 = function (i) {
+    nKeyActions[i] = function () { windowProps.multiplier += i.toString(); };
+};
+for (var i = 0; i < 10; i++) {
+    _loop_1(i);
+}
 var handleKeypress = function (event) {
     if (event.key === 'Escape') {
         windowProps.mode = 'normal';
