@@ -9,26 +9,35 @@ var windowProps = {
     textCanvas: '',
     pendingRedraw: true
 };
-var buffer = 'test\ntest2\ntest3\ntest4';
-var sliceAt = function (text, pos) {
-    var i = (windowProps.width + 1) * pos.y + pos.x;
-    windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length);
-};
-var drawBuffer = function () {
-    buffer.split('\n').forEach(function (line, i) { sliceAt(line, { x: 0, y: i }); });
-};
-var drawCursor = function () {
-    sliceAt(cursor.char, cursor.pos);
-};
+// let buffer:Buffer = {
+//   name: 'teset',
+//   text: 'test\ntest2\ntest3\ntest4'.split('\n')
+// }
+// const sliceAt = (text:string, pos:Coord):void => {
+//   const i = (windowProps.width + 1) * pos.y + pos.x
+//   windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length)
+// }
+// const drawBuffer = ():void => {
+//   buffer.split('\n').forEach((line, i) => { sliceAt(line, { x: 0, y: i }) })
+// }
 var drawBlank = function () {
-    windowProps.textCanvas = ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height);
+    return Array.from({ length: windowProps.height }, function () { return Array.from({ length: windowProps.width }, function () { return null; }); });
+};
+var drawCursor = function (lineArray) {
+    lineArray[cursor.pos.y][cursor.pos.x] = cursor.char;
+    console.log(lineArray);
+    return lineArray;
+};
+var renderLineArray = function (lineArray) {
+    var view = document.querySelector('#view');
+    view.innerText = lineArray.map(function (line) { return line.map(function (char) { return char || '·'; }).join(''); }).join('\n');
 };
 var drawCanvas = function () {
-    drawBlank();
-    drawBuffer();
-    drawCursor();
-    var view = document.querySelector('#view');
-    view.innerText = windowProps.textCanvas;
+    // drawBuffer()
+    // drawCursor()
+    // const view = document.querySelector('#view') as HTMLElement
+    // view.innerText = windowProps.textCanvas
+    renderLineArray(drawCursor(drawBlank()));
     console.log(windowProps);
 };
 var handleResize = function () {
@@ -42,7 +51,7 @@ var handleResize = function () {
     }
 };
 var runAction = function (action, updateUi) {
-    action();
+    action === null || action === void 0 ? void 0 : action();
     if (updateUi)
         drawCanvas();
     console.log(updateUi);
@@ -62,7 +71,8 @@ var handleKeypress = function (event) {
         switch (windowProps.mode) {
             case 'normal':
                 console.log(event.key);
-                Object.keys(nKeyActions).includes(event.key) && runAction(nKeyActions[event.key], true);
+                // Object.keys(nKeyActions).includes(event.key) &&
+                runAction(nKeyActions[event.key], true);
                 console.log(cursor.pos);
                 break;
             case 'insert':

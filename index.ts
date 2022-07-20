@@ -19,6 +19,14 @@ interface Cursor {
   char: string
 }
 
+type Line = Array<string|null>
+type LineArray = Array<Line>
+
+interface Buffer {
+  name: string,
+  text: LineArray[]
+}
+
 const cursor: Cursor = {
   pos: { x: 0, y: 0 },
   char: '_'
@@ -32,28 +40,39 @@ const windowProps: WindowProps = {
   pendingRedraw: true
 }
 
-let buffer:string = 'test\ntest2\ntest3\ntest4'
+// let buffer:Buffer = {
+//   name: 'teset',
+//   text: 'test\ntest2\ntest3\ntest4'.split('\n')
+// }
 
-const sliceAt = (text:string, pos:Coord):void => {
-  const i = (windowProps.width + 1) * pos.y + pos.x
-  windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length)
+// const sliceAt = (text:string, pos:Coord):void => {
+//   const i = (windowProps.width + 1) * pos.y + pos.x
+//   windowProps.textCanvas = windowProps.textCanvas.slice(0, i) + text + windowProps.textCanvas.slice(i + text.length)
+// }
+// const drawBuffer = ():void => {
+//   buffer.split('\n').forEach((line, i) => { sliceAt(line, { x: 0, y: i }) })
+// }
+const drawBlank = ():LineArray => {
+  return Array.from({ length: windowProps.height }, () => Array.from({ length: windowProps.width }, () => null))
 }
-const drawBuffer = ():void => {
-  buffer.split('\n').forEach((line, i) => { sliceAt(line, { x: 0, y: i }) })
-}
-const drawCursor = ():void => {
-  sliceAt(cursor.char, cursor.pos)
+const drawCursor = (lineArray:LineArray):LineArray => {
+  lineArray[cursor.pos.y][cursor.pos.x] = cursor.char
+  console.log(lineArray)
+  return lineArray
 }
 
-const drawBlank = ():void => {
-  windowProps.textCanvas = ('·'.repeat(windowProps.width) + '\n').repeat(windowProps.height)
-}
-const drawCanvas = (): void => {
-  drawBlank()
-  drawBuffer()
-  drawCursor()
+
+const renderLineArray = (lineArray:LineArray): void => {
   const view = document.querySelector('#view') as HTMLElement
-  view.innerText = windowProps.textCanvas
+  view.innerText = lineArray.map(line => line.map(char => char || '·').join('')).join('\n')
+}
+
+const drawCanvas = (): void => {
+  // drawBuffer()
+  // drawCursor()
+  // const view = document.querySelector('#view') as HTMLElement
+  // view.innerText = windowProps.textCanvas
+  renderLineArray(drawCursor(drawBlank()))
   console.log(windowProps)
 }
 
@@ -68,14 +87,14 @@ const handleResize = (): void => {
   }
 }
 
-const runAction = (action:Function, updateUi:boolean): void => {
-  action()
+const runAction = (action:Function|undefined, updateUi:boolean): void => {
+  action?.()
   if (updateUi) drawCanvas()
   console.log(updateUi)
 }
 
 interface KeyActions {
-  [key: string]: Function
+  [key: string]: Function | undefined
 }
 
 const nKeyActions: KeyActions = {
@@ -93,7 +112,8 @@ const handleKeypress = (event: KeyboardEvent): void => {
     switch (windowProps.mode) {
       case 'normal':
         console.log(event.key)
-        Object.keys(nKeyActions).includes(event.key) && runAction(nKeyActions[event.key], true)
+        // Object.keys(nKeyActions).includes(event.key) &&
+        runAction(nKeyActions[event.key], true)
         console.log(cursor.pos)
         break
       case 'insert':
